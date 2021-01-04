@@ -1,0 +1,107 @@
+name:                advent2021
+version:             0.1.0.0
+github:              "jan-g/advent2021"
+license:             BSD3
+author:              "jan grant"
+maintainer:          "example@example.com"
+copyright:           "2021 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/advent2016#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- array
+- split
+- containers
+- sort
+- cryptohash-md5
+- bytestring
+- utf8-string
+- base16-bytestring
+- strings >= 1.1
+- matrix
+- hex-text
+- heap >= 1.0.4
+- text >= 1.2.4.0
+- primes >= 0.2.1.0
+
+library:
+  source-dirs: src
+
+executables:
+  advent2021-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+
+tests:
+  advent2021-test1-5:
+    main:                Spec.hs
+    source-dirs:         test1-5
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+    - hspec >= 2.5.5
+
+  advent2021-test6-10:
+    main:                Spec.hs
+    source-dirs:         test6-10
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+    - hspec >= 2.5.5
+
+  advent2021-test11-15:
+    main:                Spec.hs
+    source-dirs:         test11-15
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+    - hspec >= 2.5.5
+
+  advent2021-test16-20:
+    main:                Spec.hs
+    source-dirs:         test16-20
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+    - hspec >= 2.5.5
+
+  advent2021-test21-25:
+    main:                Spec.hs
+    source-dirs:         test21-25
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - advent2021
+    - hspec >= 2.5.5
