@@ -1,4 +1,4 @@
-{- Pinched from https://github.com/wei2912/counter/blob/master/src/Data/Counter.hs because it's not marked as compatible with the latest stack snapshot 
+{- Pinched from https://github.com/wei2912/counter/blob/master/src/Data/Counter.hs because it's not marked as compatible with the latest stack snapshot
    (MIT licensed) -}
 
 module Data.Counter where

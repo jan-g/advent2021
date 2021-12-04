@@ -12,29 +12,15 @@ packages:
   original:
     hackage: strings-1.1
 - completed:
-    hackage: matrix-0.3.6.1@sha256:96ab17d9a959cd5c0e9e6db5bc48069dba5f6fa17f7f4aea838d22f35e7bc047,1941
+    hackage: hex-text-0.1.0.4@sha256:0ea54d08f85324498b2db3480f05efc17eb03177c564fce81dadef53752db2c5,1277
     pantry-tree:
-      size: 417
-      sha256: f04e95e139e7463809a1e30204f339a9b7938cf0aa54c74f68ac788aad3e316d
+      size: 367
+      sha256: b71a67b4c35b8f2650fc833f0a226f2ab8472ff35050f53c0df7bd0ec4da8d17
   original:
-    hackage: matrix-0.3.6.1
-- completed:
-    hackage: hex-text-0.1.0.2@sha256:154df2b81c1dd38b055fa6a90cb6964f60c5cf4a0ba633ea929d8a79af89519a,1301
-    pantry-tree:
-      size: 368
-      sha256: 9271e478d8bdd05760ae5ed86f72f28065e3a942019c79b5a69dc604a4b0e1a8
-  original:
-    hackage: hex-text-0.1.0.2
-- completed:
-    hackage: base16-bytestring-1.0.1.0@sha256:33b9d57afa334d06485033e930c6b13fc760baf88fd8f715ae2f9a4b46e19a54,2641
-    pantry-tree:
-      size: 595
-      sha256: 24661ef9b1089d468227300f8ceb89194b5cce68b9f6ed8109b01f63c07f54e3
-  original:
-    hackage: base16-bytestring-1.0.1.0
+    hackage: hex-text-0.1.0.4
 snapshots:
 - completed:
-    size: 533252
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/27.yaml
-    sha256: c2aaae52beeacf6a5727c1010f50e89d03869abfab6d2c2658ade9da8ed50c73
-  original: lts-16.27
+    size: 586296
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
+  original: lts-18.18

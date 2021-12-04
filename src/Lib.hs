@@ -3,6 +3,8 @@ module Lib
     , makeArray
     , natParser
     , intParser
+    , binParser
+    , readBin
     , quickParse
     , drawMapWith
     , mapReverse
@@ -55,6 +57,21 @@ intParser = do
     char '-'
     i <- natParser
     return $ -i) <++ natParser
+
+binParser :: ReadP Integer
+binParser = do
+  bits <- munch1 isBit
+  return $ readBin bits
+  where
+    isBit '0' = True
+    isBit '1' = True
+    isBit _ = False
+
+readBin :: String -> Integer
+readBin = foldl (\acc d -> acc * 2 + bit d) 0
+  where
+    bit '0' = 0
+    bit '1' = 1
 
 quickParse :: ReadP t -> String -> Maybe t
 quickParse parser s =
@@ -171,7 +188,7 @@ diceMap (dx, dy) grid =
   let ((x0, x1), (y0, y1)) = boundMap grid
       (sx, sy) = (x1 - x0 + 1, y1 - y0 + 1)
       (nx, ny) = (sx `div` dx, sy `div` dy)
-  in  
+  in
   -- trace ("(x0,x1)=" ++ show (x0,x1) ++ " dx=" ++ show dx ++ " sx=" ++ show sx ++ " nx=" ++ show nx) $
   Map.fromList [
     ((i, j), subMap ((i * dx, i * dx + dx - 1), (j * dy, j * dy + dy - 1)) grid) |
