@@ -26,5 +26,22 @@ main :: IO ()
 main =
   hspec $ do
     describe "Day 6" $ do
-      it "correctly runs on the test data" $ do
-        True `shouldBe` True
+      let example = "3,4,3,1,2\n" & lines
+          ages = Day6.parse example & Day6.ageCounts
+      it "correctly updates for one day" $ do
+        Day6.bumpCounts ages `shouldBe` Map.fromList [(2,2), (3,1), (0,1), (1,1)]
+      it "correctly computes the nth day" $ do
+        Day6.nDays ages 3 `shouldBe` Map.fromList[(0,2), (1,1), (5,1), (6,1), (7,1), (8,1)]
+      it "counts fish" $ do
+        Day6.countFish ages `shouldBe` 5
+      it "correctly sums fish on day 18" $ do
+        Day6.countFish (Day6.nDays ages 18) `shouldBe` 26
+      it "works forward to day 80" $ do
+        Day6.countFish (Day6.nDays ages 80) `shouldBe` 5934
+
+    describe "day 7" $ do
+      let example = "16,1,2,0,4,2,7,1,2,14" & lines
+      it "works out minimum costs" $ do
+        Day7.day7 example `shouldBe` (2, 37)
+      it "works out minimum type b costs" $ do
+        Day7.day7b example `shouldBe` (5, 168)
