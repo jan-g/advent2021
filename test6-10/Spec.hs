@@ -45,3 +45,38 @@ main =
         Day7.day7 example `shouldBe` (2, 37)
       it "works out minimum type b costs" $ do
         Day7.day7b example `shouldBe` (5, 168)
+
+    describe "day 8" $ do
+      let small = "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf\n" & lines
+          large = "be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe\n\
+                  \edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc\n\
+                  \fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg\n\
+                  \fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb\n\
+                  \aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea\n\
+                  \fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb\n\
+                  \dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe\n\
+                  \bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef\n\
+                  \egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb\n\
+                  \gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce\n\
+                  \" & lines
+          e1 = Day8.parse small
+          e2 = Day8.parse large
+          obvious = "abcefg cf acdeg acdfg bcdf abdfg abdefg acf abcdefg abcdfg | cf acdeg acdfg bcdf" & lines
+          e3 = Day8.parse obvious
+      it "counts the easy example" $ do
+        Day8.day8 small `shouldBe` 0
+        Day8.day8 large `shouldBe` 26
+      it "identifies the digit sets" $ do
+        let [(Day8.Line s _)] = e3
+        (Day8.decode s) Map.! (Set.fromList "acdfg") `shouldBe` 3
+      it "decodes digit sets into a single int" $ do
+        let [(Day8.Line s d)] = e1
+            decoder = Day8.decode s
+        Day8.decodeDigits decoder d `shouldBe` 5353
+      it "solves the digit sets" $ do
+        let [(Day8.Line s _)] = e3
+        (Day8.solve s) Map.! (Set.fromList "acdfg") `shouldBe` 3
+      it "uses the permutaiton approach" $ do
+        let [(Day8.Line s d)] = e1
+            decoder = Day8.solve s
+        Day8.decodeDigits decoder d `shouldBe` 5353
