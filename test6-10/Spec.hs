@@ -1,3 +1,4 @@
+{-# Language LambdaCase #-}
 import Test.Hspec
 import Control.Exception (evaluate)
 
@@ -80,3 +81,60 @@ main =
         let [(Day8.Line s d)] = e1
             decoder = Day8.solve s
         Day8.decodeDigits decoder d `shouldBe` 5353
+    
+    describe "day 9" $ do
+      let example = "2199943210\n\
+                    \3987894921\n\
+                    \9856789892\n\
+                    \8767896789\n\
+                    \9899965678\n\
+                    \" & lines
+      it "parses" $ do
+        (Day9.parse example & drawMapWith (\_ (Just d) -> show d & head)) `shouldBe` example
+      it "tots up risk" $ do
+        Day9.day9 example `shouldBe` 15
+      it "loctes regions" $ do
+        let m = Day9.parse example
+            rs = Day9.allRegions m
+        (Set.toList rs & map Set.size & L.sort & reverse & take 3) `shouldBe` [14,9,9]
+
+    describe "day 10" $ do
+      it "parses complete chunks" $ do
+        Day10.parseLine "()" `shouldBe` Day10.Complete ["()"]
+        Day10.parseLine "[]" `shouldBe` Day10.Complete ["[]"]
+        Day10.parseLine "([])" `shouldBe` Day10.Complete ["([])"]
+        Day10.parseLine "{()()()}" `shouldBe` Day10.Complete ["{()()()}"]
+        Day10.parseLine "<([{}])>" `shouldBe` Day10.Complete ["<([{}])>"]
+        Day10.parseLine "[<>({}){}[([])<>]]" `shouldBe` Day10.Complete ["[<>({}){}[([])<>]]"]
+        Day10.parseLine "(((((((((())))))))))" `shouldBe` Day10.Complete ["(((((((((())))))))))"]
+      it "parses corrupt chunks" $ do
+        Day10.parseLine "(]" `shouldBe` Day10.Corrupt [] "(" ']' ""
+        Day10.parseLine "{()()()>" `shouldBe` Day10.Corrupt [] "{()()()" '>' ""
+        Day10.parseLine "(((()))}" `shouldBe` Day10.Corrupt [] "(((()))" '}' ""
+        Day10.parseLine "<([]){()}[{}])xxx" `shouldBe` Day10.Corrupt [] "<([]){()}[{}]" ')' "xxx"
+      
+      let example = "[({(<(())[]>[[{[]{<()<>>\n\
+                    \[(()[<>])]({[<{<<[]>>(\n\
+                    \{([(<{}[<>[]}>{[]{[(<()>\n\
+                    \(((({<>}<{<{<>}{[]{[]{}\n\
+                    \[[<[([]))<([[{}[[()]]]\n\
+                    \[{[{({}]{}}([{[{{{}}([]\n\
+                    \{<[[]]>}<{[{[{[]{()[[[]\n\
+                    \[<(<(<(<{}))><([]([]()\n\
+                    \<{([([[(<>()){}]>(<<{{\n\
+                    \<{([{{}}[<[[[<>{}]]]>[]]\n\
+                    \" & lines
+      it "parses examples" $ do
+        let ls = Day10.parse example
+            incs = filter Day10.incomplete ls
+            corr = filter Day10.corrupt ls
+            comp = filter Day10.complete ls
+        comp `shouldBe` []
+        map (\case (Day10.Corrupt _ _ c _) -> c; x -> error $ show x) corr `shouldBe` "})])>"
+      it "tots up scores for corrupt lines" $ do
+        Day10.day10 example `shouldBe` 26397
+      it "produces scores for incomplete lines" $ do
+        let inc = Day10.parse example & filter Day10.incomplete
+        (map Day10.incScore inc) `shouldBe` [288957, 5566, 1480781, 995444, 294]
+      it "does part b" $ do
+        Day10.day10b example `shouldBe` 288957
