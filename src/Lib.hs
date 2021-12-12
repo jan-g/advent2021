@@ -24,9 +24,9 @@ module Lib
     , euc
     , solveDiophantine
     , combineDiophantine
-    , search, bfs, flood
+    , search, bfs, flood, floodFill
     , aStar
-    , orthogonalMoves, kingsMoves, neighbours
+    , orthogonalMoves, kingsMoves, neighbours, neighboursIn
     , swap
     , squareRoot
     ) where
@@ -286,10 +286,21 @@ bfs nextStates satisfying summariseState startState =
     Right (cost, state, _) -> Just (cost, state)
 
 -- return all the states visited until we reached the satisfying one
+--flood :: ((c, s) -> Set.Set (c, s))               -- a function that returns a set of potential next states
+--      -> ((c, s) -> Bool)                         -- a function that tells if a state is one searched for
+--      -> (s -> t)                                 -- a state-summarising function to prevent repeating searches of equivalent states
+--      -> (c, s)                                   -- starting cost and state
+--      -> Either (Set.Set t) (Set.Set t)
 flood nextStates satisfying summariseState startState =
   case search nextStates satisfying summariseState startState of
     Left r -> Left r
     Right (_, _, reached) -> Right reached
+
+-- return all reachable states
+floodFill nextStates startState =
+  case search nextStates (const False) id startState of
+    Left r -> r
+    Right (_, _, reached) -> reached
 
 
 -- a* search. Provide a cost function and a heuristic. If the heuristic function is admissible,
@@ -332,7 +343,7 @@ aStar' nextStates finished cost heuristic summariseState visited queue
 orthogonalMoves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 kingsMoves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 neighbours dirs (x, y) = [(x+dx, y + dy) | (dx,dy) <- dirs]
-
+neighboursIn dirs grid (x,y) = neighbours dirs (x,y) & filter (`Map.member` grid)
 swap (a,b) = (b,a)
 
 

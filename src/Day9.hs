@@ -124,7 +124,7 @@ allRegions m =
   let lowPoints = m
                 & Map.filterWithKey (\(x,y) d -> all (\(a,b) -> case m Map.!? (a,b) of Just e -> d < e; Nothing -> True) (neighbours orthogonalMoves (x,y)))
                 & Map.keys
-  in [floodFill m (x0,y0) | (x0,y0) <- lowPoints] & Set.fromList
+  in [Day9.floodFill m (x0,y0) | (x0,y0) <- lowPoints] & Set.fromList
 
 day9b ls =
   let m = parse ls
