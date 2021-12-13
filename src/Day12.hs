@@ -7,7 +7,7 @@ import Data.Array as A
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 import Data.Char
-import Data.Maybe (catMaybes, isJust, fromJust, fromMaybe, mapMaybe)
+import Data.Maybe (catMaybes, isJust, fromJust, fromMaybe, mapMaybe, isNothing)
 import Text.ParserCombinators.ReadP as P
 import Numeric (readInt)
 import Data.Bits ((.&.), (.|.))
@@ -15,6 +15,7 @@ import Data.Bits ((.&.), (.|.))
 import Debug.Trace (trace)
 
 import Lib
+import Control.Monad (guard)
 
 
 {-
@@ -244,9 +245,31 @@ allPaths' m =
   in
     Set.map path paths & Set.filter (\p -> head p == Small "end")
 
+allPaths'' :: Maze -> (Set.Set Node, Maybe Node) -> [Node] -> Integer
+allPaths'' m (visited, vTwice) path@(loc:_)
+  | loc == Small "end" = 1
+  | otherwise =
+  (do
+    next <- m Map.! loc & Set.toList
+    guard $ next /= Small "start"
+    case next of
+      Large l -> return $ allPaths'' m (visited, vTwice) (next:path)
+      _ ->
+        if next `Set.member` visited
+        then
+          if isNothing vTwice
+          then
+            return $ allPaths'' m (visited, Just next) (next:path)
+          else
+            mempty
+        else
+          return $ allPaths'' m (Set.insert next visited, vTwice) (next:path)
+    ) & sum
+    
 
 day12b ls =
   let
     m = parse ls
   in
-    Set.size (allPaths' m)
+--    Set.size (allPaths' m)
+    allPaths'' m (Set.singleton (Small "start"), Nothing) [Small "start"]
