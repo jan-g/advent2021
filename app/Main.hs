@@ -59,7 +59,7 @@ main = do
                  "day12" -> show . day12
                  "day12b" -> show . day12b
                  "day13" -> show . day13
-                 "day13b" -> show . day13b
+                 "day13b" -> day13b
                  "day14" -> show . day14
                  "day14b" -> show . day14b
                  "day15" -> show . day15

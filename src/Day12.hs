@@ -137,7 +137,7 @@ parseLine = do
   eof
   return $ Map.fromList [(n1, Set.singleton n2), (n2, Set.singleton n1)]
 
-node = 
+node =
   (many1 (satisfy isLower) <<!! Small) +++
   (many1 (satisfy isUpper) <<!! Large)
 
@@ -145,11 +145,11 @@ node =
 data State = State { path :: [Node]
                    , visited :: Set.Set Node
                    , revisited :: Maybe Node
-                   } 
+                   }
   deriving (Show, Eq, Ord)
 
-state0 m = State { path=[Small "start"], visited=Set.singleton (Small "start"), revisited=Just (Small "start") } 
-state0' m = State { path=[Small "start"], visited=Set.singleton (Small "start"), revisited=Nothing } 
+state0 m = State { path=[Small "start"], visited=Set.singleton (Small "start"), revisited=Just (Small "start") }
+state0' m = State { path=[Small "start"], visited=Set.singleton (Small "start"), revisited=Nothing }
 
 nextStates :: Maze -> (Int, State) -> Set.Set (Int, State)
 nextStates m (cost, s@State { path=p@(pos:ps), visited=v, revisited=rv })
@@ -162,7 +162,7 @@ nextStates m (cost, s@State { path=p@(pos:ps), visited=v, revisited=rv })
     Nothing -> Set.map (\n ->
       if n `Set.member` v then
         (cost + 1, s { path=n:p, revisited=Just n })
-      else 
+      else
         (cost + 1, s { path=n:p, visited=case n of Small _ -> Set.insert n v; _ -> v })
       ) moves
     Just _ -> Set.map (\n ->

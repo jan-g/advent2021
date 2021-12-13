@@ -175,4 +175,31 @@ main =
           ap = Day12.allPaths' e3
 
         Set.size ap `shouldBe` 3509
-            
+
+    describe "day 13" $ do
+      let example = "6,10\n\
+                    \0,14\n\
+                    \9,10\n\
+                    \0,3\n\
+                    \10,4\n\
+                    \4,11\n\
+                    \6,0\n\
+                    \6,12\n\
+                    \4,1\n\
+                    \0,13\n\
+                    \10,12\n\
+                    \3,4\n\
+                    \3,0\n\
+                    \8,4\n\
+                    \1,10\n\
+                    \2,14\n\
+                    \8,10\n\
+                    \9,0\n\
+                    \\n\                     
+                    \fold along y=7\n\
+                    \fold along x=5" & lines
+          (d, i) = Day13.parse example
+      it "parses" $ do
+        Set.size d `shouldBe` 18
+      it "folds once" $ do
+        Set.size (Day13.fold d $ head i) `shouldBe` 17
