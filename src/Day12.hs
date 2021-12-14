@@ -246,26 +246,21 @@ allPaths' m =
     Set.map path paths & Set.filter (\p -> head p == Small "end")
 
 allPaths'' :: Maze -> (Set.Set Node, Maybe Node) -> [Node] -> Integer
-allPaths'' m (visited, vTwice) path@(loc:_)
-  | loc == Small "end" = 1
-  | otherwise =
-  (do
-    next <- m Map.! loc & Set.toList
-    guard $ next /= Small "start"
-    case next of
-      Large l -> return $ allPaths'' m (visited, vTwice) (next:path)
-      _ ->
-        if next `Set.member` visited
-        then
-          if isNothing vTwice
-          then
-            return $ allPaths'' m (visited, Just next) (next:path)
-          else
-            mempty
+allPaths'' _ _ (Small "end":_) = 1
+allPaths'' m (visited, vTwice) path@(loc:_) = sum $ do
+  next <- m Map.! loc & Set.toList
+  guard $ next /= Small "start"
+  case next of
+    Large l -> pure $ allPaths'' m (visited, vTwice) (next:path)
+    _ ->
+      if next `Set.member` visited then
+        if isNothing vTwice then
+          return $ allPaths'' m (visited, Just next) (next:path)
         else
-          return $ allPaths'' m (Set.insert next visited, vTwice) (next:path)
-    ) & sum
-    
+          mempty
+      else
+        return $ allPaths'' m (Set.insert next visited, vTwice) (next:path)
+
 
 day12b ls =
   let

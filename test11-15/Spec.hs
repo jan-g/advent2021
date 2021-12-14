@@ -13,6 +13,7 @@ import qualified Data.ByteString.UTF8 as BSU
 import qualified Text.ParserCombinators.ReadP as P
 import qualified Data.Sequence as Seq
 import Data.Foldable (toList)
+import qualified Data.Counter as C
 
 import Lib
 import qualified Day11
@@ -41,7 +42,7 @@ main =
                \51115\n\
                \61116\n\
                \51115\n\
-               \45654" & lines       
+               \45654" & lines
           g0 = Day11.parse d0
           gs = iterate Day11.update g0
       it "runs the demos - day 0" $ do
@@ -50,7 +51,7 @@ main =
         unmap (gs !! 1 & Day11.layout) `shouldBe` d1
       it "runs the demos - day 2" $ do
         unmap (gs !! 2 & Day11.layout) `shouldBe` d2
-        
+
       let example = "5483143223\n\
                     \2745854711\n\
                     \5264556173\n\
@@ -91,9 +92,9 @@ main =
         (Day11.layout (gs !! 2) & unmap) `shouldBe` d2
         Day11.count (gs !! 2) `shouldBe` 35
       it "runs for 10 days" $ do
-        Day11.count (gs !! 10) `shouldBe` 204        
+        Day11.count (gs !! 10) `shouldBe` 204
       it "runs for 100 days" $ do
-        Day11.count (gs !! 100) `shouldBe` 1656        
+        Day11.count (gs !! 100) `shouldBe` 1656
       it "finds the first day when all things flash" $ do
         Day11.day11b example `shouldBe` 195
 
@@ -113,7 +114,7 @@ main =
         print e1
 --        forM_ ap $ \p -> print $ "path is " ++ Day12.showPath p
         Set.size ap `shouldBe` 10
-      
+
       let
         example2 = "dc-end\n\
                   \HN-start\n\
@@ -130,7 +131,7 @@ main =
           e2 = Day12.parse example2
           ap = Day12.allPaths e2
         Set.size ap `shouldBe` 19
-      
+
       let
         example3 = "fs-end\n\
                   \he-DX\n\
@@ -155,7 +156,7 @@ main =
           e3 = Day12.parse example3
           ap = Day12.allPaths e3
         Set.size ap `shouldBe` 226
-      
+
       it "managed part 2 for the small example" $ do
         let
           e1 = Day12.parse example
@@ -195,7 +196,7 @@ main =
                     \2,14\n\
                     \8,10\n\
                     \9,0\n\
-                    \\n\                     
+                    \\n\
                     \fold along y=7\n\
                     \fold along x=5" & lines
           (d, i) = Day13.parse example
@@ -203,3 +204,44 @@ main =
         Set.size d `shouldBe` 18
       it "folds once" $ do
         Set.size (Day13.fold d $ head i) `shouldBe` 17
+
+    describe "day 14" $ do
+      let
+        example = "NNCB\n\
+                  \\n\
+                  \CH -> B\n\
+                  \HH -> N\n\
+                  \CB -> H\n\
+                  \NH -> C\n\
+                  \HB -> C\n\
+                  \HC -> B\n\
+                  \HN -> C\n\
+                  \NN -> C\n\
+                  \BH -> H\n\
+                  \NC -> B\n\
+                  \NB -> B\n\
+                  \BN -> B\n\
+                  \BB -> N\n\
+                  \BC -> B\n\
+                  \CC -> N\n\
+                  \CN -> C" & lines
+      it "expands once" $ do
+        let (start, rules) = Day14.parse example
+        (iterate (Day14.step rules) start & take 5) `shouldBe` ["NNCB"
+                                                               , "NCNBCHB"
+                                                               , "NBCCNBBBCBHCB"
+                                                               , "NBBBCNCCNBBNBNBBCHBHHBCHB"
+                                                               , "NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB"
+                                                               ]
+      it "solves part a" $ do
+        Day14.day14 example `shouldBe` 1588
+      
+      let
+        (start, rules) = Day14.parse example
+        expansions = Day14.makeExpansionRules rules
+        s0 = Day14.makePairCounts start
+        iters = iterate (Day14.bumpCounts expansions) s0
+      it "solves part a the clever way" $ do
+        Day14.summariseItem (iters !! 10) `shouldBe` 1588
+      it "solves part b" $ do
+        Day14.summariseItem (iters !! 40) `shouldBe` 2188189693529
