@@ -197,7 +197,7 @@ summariseItem item =
     (h, _) = Map.findMax revs
   in
     h - l
-  
+
 day14b ls =
   let
     (start, rules) = parse ls
