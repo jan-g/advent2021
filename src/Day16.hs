@@ -1,6 +1,7 @@
 module Day16 where
 
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.List.Split
 import Data.List as L
 import Data.Array as A
@@ -115,10 +116,18 @@ Decode the structure of your hexadecimal-encoded BITS transmission; what do you 
 To begin, get your puzzle input.
 -}
 
-data Packet = Packet { version :: Integer, payload :: Content }  deriving (Show, Eq)
-data Content = Literal { value :: Integer }
-             | Operator { kind :: Integer, operands :: [Packet] }
+data Packet = Literal { lVersion :: Integer, value :: Integer }
+            | Operator { oVersion :: Integer, kind :: Integer, operands :: [Packet] }
   deriving (Show, Eq)
+
+version :: Packet -> Integer
+version Literal { lVersion=v } = v
+version Operator { oVersion=v } = v
+  
+op :: Integer -> Integer -> [Packet] -> Packet
+op v k ps = Operator { oVersion=v, kind=k, operands=ps }
+lit :: Integer -> Integer -> Packet
+lit v n = Literal { lVersion=v, value=n }
 
 hexToBin :: String -> String
 hexToBin hs = concatMap fromHex hs
@@ -151,52 +160,26 @@ stringDecode :: ReadP Packet
 stringDecode = packetDecode <<<< manyTill (char '0') eof
 
 packetDecode :: ReadP Packet
-packetDecode = do
-  v <- nBits 3
-  p <- parseContent
-  return $ Packet { version=v, payload=p }
-
-parseContent :: ReadP Content
-parseContent = contentLiteral +++ contentOperator
-
-contentLiteral :: ReadP Content
-contentLiteral = do
-  string "100"
-  cs <- manyTill (do
-    char '1'
-    count 4 get) (char '0')
-  l <- count 4 get
-  let v = concat cs ++ l & readBin
-  return Literal { value=v }
-
-nBits :: (Integral n) => n -> ReadP Integer
-nBits n = do
-  bs <- count (fromIntegral n) get
-  return $ readBin bs
-
-contentOperator :: ReadP Content
-contentOperator = do
-  t <- nBits 3
-  lType <- get
-  ps <- do
-    case lType of
-      '0' -> do
-        n <- nBits 15
-        content <- count (fromInteger n) get
-        let ps = quickParse (many packetDecode <<<< eof) content & fromJust
-        return ps
-      '1' -> do
-        n <- nBits 11
-        ps <- count (fromInteger n) packetDecode
-        return ps
-  return Operator { kind=t, operands=ps }
+packetDecode =
+  (lit <$> nBits 3 <* string "100" <*> ((((many (char '1' *> count 4 get) <&> concat) <&> (++)) <*> (char '0' *> count 4 get)) <&> readBin))
+  <++
+  (op <$> nBits 3 <*> nBits 3 <*> do
+      lType <- get
+      case lType of
+        '0' -> do   
+          n <- nBits 15
+          content <- count (fromInteger n) get
+          return $ quickParse (many packetDecode <* eof) content & fromJust
+        '1' -> do
+          n <- nBits 11 
+          count (fromInteger n) packetDecode)
+  where
+  nBits n = readBin <$> count n get
 
 
 versionSum :: Packet -> Integer
-versionSum Packet { version=v, payload=p } = v + vSum p
-  where
-  vSum Literal {} = 0
-  vSum Operator { operands=o } = sum $ map versionSum o
+versionSum l@Literal {} = version l
+versionSum o@Operator {} = version o + sum (map versionSum $ operands o)
 
 day16 ls =
   let p = parse ls
@@ -233,15 +216,13 @@ For example:
 What do you get if you evaluate the expression represented by your hexadecimal-encoded BITS transmission?
 -}
 
-eval Packet { payload=p } = eval' p
-  where
-  eval' Literal { value=v } = v
-  eval' o@Operator { kind=0 } = sum $ map eval $ operands o  
-  eval' o@Operator { kind=1 } = product $ map eval $ operands o
-  eval' o@Operator { kind=2 } = minimum $ map eval $ operands o
-  eval' o@Operator { kind=3 } = maximum $ map eval $ operands o
-  eval' o@Operator { kind=5, operands=[o1,o2] } = if eval o1 > eval o2 then 1 else 0
-  eval' o@Operator { kind=6, operands=[o1,o2] } = if eval o1 < eval o2 then 1 else 0
-  eval' o@Operator { kind=7, operands=[o1,o2] } = if eval o1 == eval o2 then 1 else 0
+eval Literal { value=v } = v
+eval Operator { kind=0, operands=o } = sum $ map eval o  
+eval Operator { kind=1, operands=o } = product $ map eval o
+eval Operator { kind=2, operands=o } = minimum $ map eval o
+eval Operator { kind=3, operands=o } = maximum $ map eval o
+eval Operator { kind=5, operands=[o1,o2] } = if eval o1 > eval o2 then 1 else 0
+eval Operator { kind=6, operands=[o1,o2] } = if eval o1 < eval o2 then 1 else 0
+eval Operator { kind=7, operands=[o1,o2] } = if eval o1 == eval o2 then 1 else 0
 
 day16b ls = eval $ parse ls

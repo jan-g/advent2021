@@ -16,7 +16,6 @@ import Data.Foldable (toList)
 
 import Lib
 import qualified Day16
-import Day16 (Packet(..), Content(..), version, payload, value, kind, operands)
 import qualified Day17
 import qualified Day18
 import qualified Day19
@@ -27,19 +26,23 @@ main :: IO ()
 main =
   hspec $ do
     describe "Day 16" $ do
+      let
+        op = Day16.op
+        lit = Day16.lit
+
       it "correctly runs on the test data" $ do
         Day16.hexToBin "D2FE28" `shouldBe` "110100101111111000101000"
-        Day16.parse ["D2FE28"] `shouldBe` Packet { version=6, payload=Literal { value=2021 }}
+        Day16.parse ["D2FE28"] `shouldBe` lit 6 2021
 
       it "parses the other examples" $ do
         Day16.parse ["8A004A801A8002F478"] `shouldBe`
-          Packet { version=4, payload=Operator { kind=2, operands=[
-            Packet { version=1, payload=Operator { kind=2, operands=[
-              Packet { version=5, payload=Operator { kind=2, operands=[
-                Packet { version=6, payload=Literal { value=15 }}
-              ]}}
-            ]}}
-          ]}}
+          op 4 2 [
+            op 1 2 [
+              op 5 2 [
+                lit 6 15
+              ]
+            ]
+          ]
 
       forM_ [ ("8A004A801A8002F478", 16)
             , ("620080001611562C8802118E34", 12)
