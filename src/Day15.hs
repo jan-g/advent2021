@@ -74,14 +74,28 @@ findPath m (x0,y0) (xn,yn) =
     summariseState ((x,y,c):_) = (x,y)
     startState = [(x0,y0,0)]
 
+findPath' m (x0,y0) (xn,yn) =
+  bfs nextStates satisfying summariseState startState
+  where
+    nextStates :: (Integer, [Point]) -> Set.Set (Integer, [Point])
+    nextStates (c, p@((x,y):_)) = neighbours orthogonalMoves (x,y)
+                              & filter (`Map.member` m)
+                              & map (\(x',y') -> (c + m Map.! (x',y'), (x',y'):p))
+                              & Set.fromList
+    satisfying :: (Integer, [Point]) -> Bool
+    satisfying (_, (x,y):_) = (x,y) == (xn,yn)
+    summariseState :: [Point] -> Point
+    summariseState ((x,y):_) = (x,y)
+    startState = (0, [(x0,y0)])
+
 day15 ls =
   let
     m = parse ls
     ((x0,xn),(y0,yn)) = boundMap m
   in
-    findPath m (x0,y0) (xn,yn)    
+    findPath m (x0,y0) (xn,yn)
 
-  
+
 {-
 --- Part Two ---
 
@@ -220,8 +234,8 @@ expand m = Map.unions $ do
   dy <- [0..4]
   let offset = dx + dy
       m' = offsetMap (sx * dx, sy * dy) m
-  pure $ Map.map (\c -> (c - 1 + offset) `mod` 9 + 1) m'   
-  
+  pure $ Map.map (\c -> (c - 1 + offset) `mod` 9 + 1) m'
+
 
 day15b ls =
   let
