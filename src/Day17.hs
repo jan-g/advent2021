@@ -152,6 +152,58 @@ parseLine = do
   return ((x0, y0), (x1, y1))
   
 
+
+
+xs dx0 =
+  xs' 0 dx0
+  where
+    xs' x dx = [x] ++ (xs' (x + dx) ((dx - 1) `max` 0)) 
+
+ys dy0 =
+  ys' 0 dy0
+  where
+    ys' y dy = [y] ++ (ys' (y + dy) (dy - 1))
+
+hitsTarget ((x0,y0), (x1,y1)) dx dy =
+  let
+    locs = (xs dx) `zip` (ys dy)
+  in
+    takeWhile (\(x,y) -> x <= x1 && y0 <= y) locs
+  & any (\(x,y) -> x0 <= x && x <= x1 && y0 <= y && y <= y1)
+
+
+maxHeight dy = scan 0 dy 0
+  where
+  scan my dy y
+   | y < my = my
+   | otherwise = scan y (dy - 1) (y + dy)
+
+
+day17 ls =
+  let
+    bounds = parse ls
+    shots = findAnswers bounds
+    heights = map snd shots
+  in
+    maximum heights
+
+
+findAnswers bounds@((x0,y0), (x1,y1)) = do
+  dx <- [1..x1]
+  dy <- [y0..(-y0)]
+  guard $ hitsTarget bounds dx dy
+  let height = maxHeight dy
+  return ((dx, dy), height)
+
+
+day17b ls =
+  let
+    bounds = parse ls
+    shots = findAnswers bounds
+  in
+    length shots
+     
+
 -- bracket x velocities
 -- x = t (x_start - t)
 -- solve:
@@ -186,17 +238,6 @@ maxT (xMin, xMax) (minT, dx) =
    | otherwise = scan t rest
 
 
-
-xs dx0 =
-  xs' 0 dx0
-  where
-    xs' x dx = [x] ++ (xs' (x + dx) ((dx - 1) `max` 0)) 
-
-ys dy0 =
-  ys' 0 dy0
-  where
-    ys' y dy = [y] ++ (ys' (y + dy) (dy - 1))
-
 -- bracket dys given (tMin, tMax)
 -- we calculate every dy0 from [y0..-y0] - anything smaller than y0 will shoot below it on t=1,
 -- and anything larger than -y0 it will return from y=0 -> y=-y0-1 (or smaller) after repassing the "horizon"
@@ -214,9 +255,8 @@ dy0s ((x0,y0), (x1,y1)) (minT, maxT) = do
     in
       tys
 
-  
 
-day17 ls =
+day17' ls =
   let
     bounds@((x0,y0), (x1,y1)) = parse ls
     mintxvs = minTXVels x0 x1
@@ -259,7 +299,7 @@ In the above example, there are 112 different initial velocity values that meet 
 How many distinct initial velocity values cause the probe to be within the target area after any step?
 -}
 
-day17b ls =
+day17b' ls =
   let
     bounds@((x0,y0), (x1,y1)) = parse ls
     mintxvs = minTXVels x0 x1
