@@ -129,32 +129,12 @@ op v k ps = Operator { oVersion=v, kind=k, operands=ps }
 lit :: Integer -> Integer -> Packet
 lit v n = Literal { lVersion=v, value=n }
 
-hexToBin :: String -> String
-hexToBin hs = concatMap fromHex hs
-
 parse :: [String] -> Packet
 parse ls = ls
          & head
          & hexToBin
          & quickParse stringDecode
          & fromJust
-
-fromHex '0' = "0000"
-fromHex '1' = "0001"
-fromHex '2' = "0010"
-fromHex '3' = "0011"
-fromHex '4' = "0100"
-fromHex '5' = "0101"
-fromHex '6' = "0110"
-fromHex '7' = "0111"
-fromHex '8' = "1000"
-fromHex '9' = "1001"
-fromHex 'A' = "1010"
-fromHex 'B' = "1011"
-fromHex 'C' = "1100"
-fromHex 'D' = "1101"
-fromHex 'E' = "1110"
-fromHex 'F' = "1111"
 
 stringDecode :: ReadP Packet
 stringDecode = packetDecode <<<< manyTill (char '0') eof

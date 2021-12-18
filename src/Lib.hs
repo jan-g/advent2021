@@ -29,6 +29,7 @@ module Lib
     , orthogonalMoves, kingsMoves, neighbours, neighboursIn
     , swap
     , squareRoot
+    , hexToBin
     ) where
 
 import Data.Array
@@ -359,3 +360,31 @@ squareRoot n =
        iters = iterate newtonStep (squareRoot (div n lowerN) * lowerRoot)
        isRoot r  =  r^2 <= n && n < (r+1)^2
   in  head $ dropWhile (not . isRoot) iters
+
+
+-- hex to binary
+hexToBin :: String -> String
+hexToBin hs = concatMap fromHex hs
+
+fromHex '0' = "0000"
+fromHex '1' = "0001"
+fromHex '2' = "0010"
+fromHex '3' = "0011"
+fromHex '4' = "0100"
+fromHex '5' = "0101"
+fromHex '6' = "0110"
+fromHex '7' = "0111"
+fromHex '8' = "1000"
+fromHex '9' = "1001"
+fromHex 'A' = "1010"
+fromHex 'B' = "1011"
+fromHex 'C' = "1100"
+fromHex 'D' = "1101"
+fromHex 'E' = "1110"
+fromHex 'F' = "1111"
+fromHex 'a' = "1010"
+fromHex 'b' = "1011"
+fromHex 'c' = "1100"
+fromHex 'd' = "1101"
+fromHex 'e' = "1110"
+fromHex 'f' = "1111"
