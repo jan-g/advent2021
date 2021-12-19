@@ -68,3 +68,12 @@ union ::
     -> Counter k v -- ^ Second counter.
     -> Counter k v -- ^ Union of both counters.
 union = M.unionWith (+)
+
+{-|
+  Returns the intersection of two counters.
+-}
+intersection :: (Ord k, Ord v, Num v)
+             => Counter k v -- ^ First counter
+             -> Counter k v -- ^ Second counter
+             -> Counter k v -- ^ Intersection of both bounters
+intersection = M.intersectionWith min

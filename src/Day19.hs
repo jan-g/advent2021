@@ -11,6 +11,7 @@ import Data.Maybe (catMaybes, isJust, fromJust, fromMaybe, mapMaybe)
 import Text.ParserCombinators.ReadP as P
 import Numeric (readInt)
 import Data.Bits ((.&.), (.|.))
+import qualified Data.Counter as C
 
 import Debug.Trace (trace)
 
@@ -396,12 +397,13 @@ parse ls = ls
          & map parseScanner
          & Map.unions
 
-parseScanner :: [String] -> Map.Map Scanner (Set.Set Point)
+parseScanner :: [String] -> Map.Map Scanner (Set.Set Point, Fingerprint)
 parseScanner (h:cs) =
   let
     Just scannerId = quickParse parseHeader h
+    points = Set.fromList (mapMaybe (quickParse parseCoord) cs)
   in
-    Map.singleton scannerId $ Set.fromList (mapMaybe (quickParse parseCoord) cs)
+    Map.singleton scannerId $ (points, fingerprint points)
 
 parseHeader :: ReadP Scanner
 parseHeader = do
@@ -410,7 +412,7 @@ parseHeader = do
   string " ---"
   eof
   return n
-  
+
 parseCoord :: ReadP Point
 parseCoord = do
   x <- intParser
@@ -419,25 +421,49 @@ parseCoord = do
   char ','
   z <- intParser
   eof
-  return (x, y, z)       
+  return (x, y, z)
 
 type Offset = Point
 
-fitScanner :: [(Scanner, Offset, Set.Set Point)]     -- the scanners we've fitted in place
-           -> [(Scanner, Set.Set Point)]                  -- scanners remaining to fit
+-- Add a heuristic which can be used to short-circuit computations
+type Fingerprint = C.Counter Integer Integer
+
+fingerprint :: Set.Set Point -> Fingerprint
+fingerprint ps =
+  let
+    ps' = ps & Set.toList
+    dists = do
+      p0@(x0,y0,z0) <- ps'
+      p1@(x1,y1,z1) <- ps'
+      guard $ p0 /= p1
+      return $ (x0-x1) * (x0-x1) + (y0-y1) * (y0-y1) + (z0-z1) * (z0-z1)
+  in
+    C.count dists & Map.delete 0
+
+fpCompatible :: Fingerprint -> Fingerprint -> Bool
+fpCompatible fp0 fp1 = C.intersection fp0 fp1
+                     & Map.toList
+                     & map snd
+                     & sum
+                     & (>= 12 * 11)
+
+fitScanner :: [(Scanner, Offset, Set.Set Point, Fingerprint)]     -- the scanners we've fitted in place
+           -> [(Scanner, Set.Set Point, Fingerprint)]                  -- scanners remaining to fit
            -> Set.Set (Scanner, Scanner)             -- already tried
            -> (Set.Set (Scanner, Scanner)            -- updated record of what we've tried
-              , Maybe (Scanner, Offset, Set.Set Point))      -- the next scanner and its oriented points, plus offset
+              , Maybe (Scanner, Offset, Set.Set Point, Fingerprint))      -- the next scanner and its oriented points, plus offset
 fitScanner fitted [] tried = (tried, Nothing)
-fitScanner fitted ((s, ps):ss) tried =
+fitScanner fitted ((s, ps, fp):ss) tried =
   let
     fits = do
+      -- for each fitted scanner
+      (s0, off0, p0s, fp0) <- fitted
+      guard $ not $ Set.member (s0,s) tried
+      -- firstly, check that we've a compatible fingerprint
+      guard $ fpCompatible fp0 fp
       -- try each orientation
       o <- orientations3d
       let ps' = ps & Set.map o
-      -- for each fitted scanner
-      (s0, off0, p0s) <- fitted
-      guard $ not $ Set.member (s0,s) tried
       -- for each potential relative offset:
       (x0,y0,z0) <- Set.toList p0s
       (x1,y1,z1) <- Set.toList ps'
@@ -449,35 +475,36 @@ fitScanner fitted ((s, ps):ss) tried =
       return (s, offset3d off0 off1, ps')
   in
     case fits of
-      (s', o', p'):_ -> (tried, Just (s', o', p'))
+      (s', o', p'):_ -> (tried, Just (s', o', p', fp))
       -- no fit with this one yet, keep trying
       _ -> fitScanner fitted ss tried'
            where
-           tried' = map (\(s0,_,_) -> (s0,s)) fitted
+           tried' = map (\(s0,_,_,_) -> (s0,s)) fitted
                   & Set.fromList
                   & Set.union tried
 
 
-fitAll :: [(Scanner, Offset, Set.Set Point)]     -- the scanners we've fitted in place
-       -> Map.Map Scanner (Set.Set Point)        -- scanners remaining to fit
+fitAll :: [(Scanner, Offset, Set.Set Point, Fingerprint)]     -- the scanners we've fitted in place
+       -> Map.Map Scanner (Set.Set Point, Fingerprint)        -- scanners remaining to fit
        -> Set.Set (Scanner, Scanner)                 -- things we've already tried
-       -> [(Scanner, Offset, Set.Set Point)]     -- all the scanners we can fit
+       -> [(Scanner, Offset, Set.Set Point, Fingerprint)]     -- all the scanners we can fit
 fitAll starting remaining tried
  | Map.null remaining = starting
  | otherwise =
- case fitScanner starting (Map.toList remaining) tried of
+ case fitScanner starting (Map.toList remaining & map (\(x,(y,z)) -> (x,y,z))) tried of
    (_, Nothing) -> starting
-   (tried', Just (s, o, ps)) -> fitAll (starting ++ [(s, o, ps)]) (Map.delete s remaining) tried'
+   (tried', Just (s, o, ps, fp)) -> fitAll (starting ++ [(s, o, ps, fp)]) (Map.delete s remaining) tried'
 
-allPoints :: [(Scanner, Offset, Set.Set Point)] -> Set.Set Point
+allPoints :: [(Scanner, Offset, Set.Set Point, Fingerprint)] -> Set.Set Point
 allPoints s = s
-            & map (\(_, o, ps) -> Set.map (offset3d o) ps)
+            & map (\(_, o, ps, _) -> Set.map (offset3d o) ps)
             & Set.unions
 
 day19 ls =
   let
     ss = parse ls
-    fit0 = [(0, (0,0,0), ss Map.! 0)]
+    (s0, fp0) = ss Map.! 0
+    fit0 = [(0, (0,0,0), s0, fp0)]
     rest0 = Map.delete 0 ss
     ans = fitAll fit0 rest0 Set.empty
     ps = allPoints ans
@@ -498,10 +525,11 @@ What is the largest Manhattan distance between any two scanners?
 day19b ls =
   let
     ss = parse ls
-    fit0 = [(0, (0,0,0), ss Map.! 0)]
+    (s0, fp0) = ss Map.! 0
+    fit0 = [(0, (0,0,0), s0, fp0)]
     rest0 = Map.delete 0 ss
     ans = fitAll fit0 rest0 Set.empty
-    positions = map (\(_,o,_) -> o) ans
+    positions = map (\(_,o,_,_) -> o) ans
   in
     maximum $ do
       p0 <- positions
