@@ -30,6 +30,7 @@ module Lib
     , swap
     , squareRoot
     , hexToBin
+    , orientations3d, offset3d, manhattan3d
     ) where
 
 import Data.Array
@@ -388,3 +389,39 @@ fromHex 'c' = "1100"
 fromHex 'd' = "1101"
 fromHex 'e' = "1110"
 fromHex 'f' = "1111"
+
+
+orientations3d = [ \(x,y,z) -> (x,y,z)
+                 , \(x,y,z) -> (x,-z,y)
+                 , \(x,y,z) -> (x,-y,-z)
+                 , \(x,y,z) -> (x,z,-y)
+                 
+                 , \(x,y,z) -> (-x,y,-z)
+                 , \(x,y,z) -> (-x,z,y)
+                 , \(x,y,z) -> (-x,-y,z)
+                 , \(x,y,z) -> (-x,-z,-y)
+                 
+                 , \(x,y,z) -> (y,-x,z)
+                 , \(x,y,z) -> (y,-z,-x)
+                 , \(x,y,z) -> (y,x,-z)
+                 , \(x,y,z) -> (y,z,x)
+
+                 , \(x,y,z) -> (-y,x,z)
+                 , \(x,y,z) -> (-y,-z,x)
+                 , \(x,y,z) -> (-y,-x,-z)
+                 , \(x,y,z) -> (-y,z,-x)
+                 
+                 , \(x,y,z) -> (z,x,y)
+                 , \(x,y,z) -> (z,-y,x)
+                 , \(x,y,z) -> (z,-x,-y)
+                 , \(x,y,z) -> (z,y,-x)
+
+                 , \(x,y,z) -> (-z,y,x)
+                 , \(x,y,z) -> (-z,-x,y)
+                 , \(x,y,z) -> (-z,-y,-x)
+                 , \(x,y,z) -> (-z,x,-y)
+                 ]
+
+offset3d (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
+
+manhattan3d (x0,y0,z0) (x1,y1,z1) = abs (x0-x1) + abs (y0-y1) + abs (z0-z1)
