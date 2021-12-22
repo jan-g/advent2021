@@ -15,6 +15,7 @@ import qualified Data.Sequence as Seq
 import Data.Foldable (toList)
 
 import Lib
+import Lib.Geometry
 import qualified Day21
 import qualified Day22
 import qualified Day23
@@ -124,10 +125,11 @@ main =
               \off x=-93533..-4276,y=-16170..68771,z=-104985..-24507" & lines
         ps = Day22.parse ex2
       it "parses correctly" $ do
-        head ps `shouldBe` (True, Day22.cuboid (-5) 47 (-31) 22 (-19) 33)
-        last ps `shouldBe` (False, Day22.cuboid (-93533) (-4276) (-16170) 68771 (-104985) (-24507))
+        head ps `shouldBe` (True, cuboid (-5) 47 (-31) 22 (-19) 33)
+        last ps `shouldBe` (False, cuboid (-93533) (-4276) (-16170) 68771 (-104985) (-24507))
         length ps `shouldBe` 60
       it "works out part 2" $ do
         Day22.day22b ex2 `shouldBe` 2758514936282235
       it "does the check for part 2, the central region" $ do
         Day22.day22 ex2 `shouldBe` 474140 
+      

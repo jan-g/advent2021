@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 31ebc1d3d507dcd6eecd94ecb469d7621aff8fb538b1e3398e024087711ae85b
+-- hash: 23afa5beb565f66744d6b80f6289def8f1157fca2349c007047cb68a12e3e5a9
 
 name:           advent2021
 version:        0.1.0.0
@@ -55,6 +55,7 @@ library
       Day8
       Day9
       Lib
+      Lib.Geometry
   other-modules:
       Paths_advent2021
   hs-source-dirs:

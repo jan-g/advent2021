@@ -16,6 +16,7 @@ import Control.Monad (guard)
 import Debug.Trace (trace)
 
 import Lib
+import Lib.Geometry
 
 
 {-
@@ -133,17 +134,6 @@ Execute the reboot steps. Afterward, considering only cubes in the region x=-50.
 To begin, get your puzzle input.
 -}
 
-data Cuboid = Cuboid { xmin :: Integer
-                     , xmax :: Integer
-                     , ymin :: Integer
-                     , ymax :: Integer
-                     , zmin :: Integer
-                     , zmax :: Integer
-                     }
-  deriving (Show, Eq, Ord)
-
-cuboid x0 x1 y0 y1 z0 z1 = Cuboid { xmin=x0, xmax=x1, ymin=y0, ymax=y1, zmin=z0, zmax=z1 }
-
 type Action = (Bool, Cuboid)
 
 parse :: [String] -> [Action]
@@ -168,62 +158,6 @@ parseAction = do
   eof
   return (onOff == "on", cuboid x0 x1 y0 y1 z0 z1)
 
-
-overlaps :: Cuboid -> Cuboid -> Bool
-overlaps c0 c1 =
-  -- we don't overlap if there's a separation along some axis
-  let
-    xsep = xmin c0 > xmax c1 || xmax c0 < xmin c1
-    ysep = ymin c0 > ymax c1 || ymax c0 < ymin c1
-    zsep = zmin c0 > zmax c1 || zmax c0 < zmin c1
-  in not (xsep || ysep || zsep)
-
--- given cuboids A and B, return a set whose union equals A, split along any overlaps with B
--- we'll use this by considering a pair of cuboids and splitting each in turn, along each axis
-dslice :: (Cuboid -> Integer, Cuboid -> Integer, Cuboid -> Integer -> Cuboid, Cuboid -> Integer -> Cuboid)  -- lenses
-       -> Cuboid -> Cuboid -> [Cuboid]
-dslice (getmin, getmax, setmin, setmax) a b
-  {- split A over the 'd' axis. Possibilities:
-     A  ----     | ------   | -------- |   ------ |     ----- |   -----
-     B      ---- |     ---- |   ----   | ----     | ----      | ---------
-  -}
-  | getmax a < getmin b = [a]
-  | getmin a > getmax b = [a]
-  | getmin b <= getmin a && getmax a <= getmax b = [a]
-  | getmin a < getmin b && getmin b <= getmax a && getmax a <= getmax b =
-    [ setmax a (getmin b - 1)
-    , setmin a (getmin b)]
-  | getmax a > getmax b && getmin b <= getmin a && getmin a <= getmax b =
-    [ setmin a (getmax b + 1)
-    , setmax a (getmax b)]
-  | getmin a < getmin b && getmax b < getmax a =    -- feels safer to spell it out rather than "otherwise"
-    [ setmax a (getmin b - 1)
-    , setmin a (getmax b + 1)
-    , setmax (setmin a (getmin b)) (getmax b)]
-
-xslice :: Cuboid -> Cuboid -> [Cuboid]
-xslice a b = dslice (xmin, xmax, \a x -> a{xmin=x}, \a x -> a{xmax=x}) a b
-
-yslice :: Cuboid -> Cuboid -> [Cuboid]
-yslice a b = dslice (ymin, ymax, \a y -> a{ymin=y}, \a y -> a{ymax=y}) a b
-
-zslice :: Cuboid -> Cuboid -> [Cuboid]
-zslice a b = dslice (zmin, zmax, \a z -> a{zmin=z}, \a z -> a{zmax=z}) a b
-
--- is A completely inside B?
-inside :: Cuboid -> Cuboid -> Bool
-inside a b =
-  xmin b <= xmin a && xmax a <= xmax b &&
-  ymin b <= ymin a && ymax a <= ymax b &&
-  zmin b <= zmin a && zmax a <= zmax b
-
-slice :: Cuboid -> Cuboid -> [Cuboid]
-slice a b
-  | a `overlaps` b = [a]
-                   & concatMap (`xslice` b)
-                   & concatMap (`yslice` b) 
-                   & concatMap (`zslice` b)
-  | otherwise = [a]
 
 -- add the new cuboid to the set of cuboids we already have
 -- we do this by splitting each current cuboid into its overlaps with the new one,
@@ -253,9 +187,6 @@ process as = foldl (\cs n ->
                       {- trace ("processing " ++ (show $ length cs) ++ " cuboids with " ++ (show n)) $ -}
                       update cs n) [] as
 
-
-
-type Point = (Integer, Integer, Integer)
 
 day22 ls =
   let

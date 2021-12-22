@@ -119,6 +119,7 @@ narrowCandidateMap m =
         finalise m = Map.map (head . Set.toList) m
 
 
+-- use <*
 infixl 8 <<<<
 (<<<<) :: ReadP p1 -> ReadP p2 -> ReadP p1
 p1 <<<< p2 = do
@@ -126,6 +127,7 @@ p1 <<<< p2 = do
   _ <- p2
   return x
 
+-- use *>
 infixl 8 >>>>
 (>>>>) :: ReadP p1 -> ReadP p2 -> ReadP p2
 p1 >>>> p2 = do
@@ -425,3 +427,5 @@ orientations3d = [ \(x,y,z) -> (x,y,z)
 offset3d (x0,y0,z0) (x1,y1,z1) = (x0+x1,y0+y1,z0+z1)
 
 manhattan3d (x0,y0,z0) (x1,y1,z1) = abs (x0-x1) + abs (y0-y1) + abs (z0-z1)
+
+
