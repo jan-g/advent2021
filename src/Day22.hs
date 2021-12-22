@@ -305,4 +305,52 @@ day22b' ls =
       last = [(1, c) | isOn]
     in
       thusFar ++ overlaps ++ last
-      
+
+
+allCoords :: [Cuboid] -> (Set.Set Integer, Set.Set Integer, Set.Set Integer)
+allCoords cs =
+  ( Set.fromList $ map xmin cs ++ map (succ . xmax) cs
+  , Set.fromList $ map ymin cs ++ map (succ . ymax) cs
+  , Set.fromList $ map zmin cs ++ map (succ . zmax) cs)
+
+type Range = (Integer, Integer)
+
+
+day22b'' ls =
+  let
+    final = foldl update Set.empty cs
+  in
+    sum [((x1-x0) * (y1-y0) * (z1-z0)) | ((x0,x1),(y0,y1),(z0,z1)) <- Set.toList final]
+  where
+  cs = parse ls
+  (xs, ys, zs) = allCoords (map snd cs)
+  (xb, yb, zb) = (bracket xs, bracket ys, bracket zs)
+  bracket ds =
+    trace ("size of coordinate set: " ++ show (Set.size ds)) $
+    let
+      range = Set.toAscList ds
+      top = Set.findMax ds + 1
+    in
+      -- produce [l, u) from this
+      zip range (tail range ++ [top])
+  -- dmin and dmax are inclusive; the regions are [lower, upper)
+  regions :: [Range] -> Integer -> Integer -> [Range]
+  regions brackets dmin dmax =
+    -- we want:
+    -- [l,h)            ------ |   ----   |   ----
+    -- [dmin,dmax]    ----     |  ------- |     ----
+    filter (\(l,h) -> l <= dmax && dmin < h) brackets
+  update :: Set.Set (Range, Range, Range) -> (Bool, Cuboid) -> Set.Set (Range, Range, Range)
+  update thusFar (isOn, c) =
+    trace ("overlapping with " ++ (show $ Set.size thusFar) ++ " regions, and " ++ show c) $
+    let
+      cells = Set.fromList $ do
+        x <- regions xb (xmin c) (xmax c)
+        y <- regions yb (ymin c) (ymax c)
+        z <- regions zb (zmin c) (zmax c)
+        return (x,y,z)
+    in
+      if isOn then
+        thusFar `Set.union` cells
+      else
+        thusFar `Set.difference` cells

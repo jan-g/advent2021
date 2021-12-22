@@ -134,4 +134,6 @@ main =
         Day22.day22 ex2 `shouldBe` 474140 
       it "works out part 2 using the inclusion-exclusion approach" $ do
         Day22.day22b' ex2 `shouldBe` 2758514936282235
-        
+
+      it "computes 22b using cells" $ do
+        Day22.day22b'' ex2 `shouldBe` 2758514936282235
