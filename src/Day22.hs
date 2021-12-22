@@ -133,19 +133,18 @@ Execute the reboot steps. Afterward, considering only cubes in the region x=-50.
 To begin, get your puzzle input.
 -}
 
-data Action = Action { on :: Bool
-                     , x :: (Integer, Integer)
-                     , y :: (Integer, Integer)
-                     , z :: (Integer, Integer)
+data Cuboid = Cuboid { xmin :: Integer
+                     , xmax :: Integer
+                     , ymin :: Integer
+                     , ymax :: Integer
+                     , zmin :: Integer
+                     , zmax :: Integer
                      }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
-x0 a = fst (x a)
-x1 a = snd (x a)
-y0 a = fst (y a)
-y1 a = snd (y a)
-z0 a = fst (z a)
-z1 a = snd (z a)
+cuboid x0 x1 y0 y1 z0 z1 = Cuboid { xmin=x0, xmax=x1, ymin=y0, ymax=y1, zmin=z0, zmax=z1 }
+
+type Action = (Bool, Cuboid)
 
 parse :: [String] -> [Action]
 parse ls = ls
@@ -167,42 +166,107 @@ parseAction = do
   string ".."
   z1 <- intParser
   eof
-  return Action { on = onOff == "on", x=(x0, x1), y=(y0, y1), z=(z0, z1) }
+  return (onOff == "on", cuboid x0 x1 y0 y1 z0 z1)
+
+
+overlaps :: Cuboid -> Cuboid -> Bool
+overlaps c0 c1 =
+  -- we don't overlap if there's a separation along some axis
+  let
+    xsep = xmin c0 > xmax c1 || xmax c0 < xmin c1
+    ysep = ymin c0 > ymax c1 || ymax c0 < ymin c1
+    zsep = zmin c0 > zmax c1 || zmax c0 < zmin c1
+  in not (xsep || ysep || zsep)
+
+-- given cuboids A and B, return a set whose union equals A, split along any overlaps with B
+-- we'll use this by considering a pair of cuboids and splitting each in turn, along each axis
+dslice :: (Cuboid -> Integer, Cuboid -> Integer, Cuboid -> Integer -> Cuboid, Cuboid -> Integer -> Cuboid)  -- lenses
+       -> Cuboid -> Cuboid -> [Cuboid]
+dslice (getmin, getmax, setmin, setmax) a b
+  {- split A over the 'd' axis. Possibilities:
+     A  ----     | ------   | -------- |   ------ |     ----- |   -----
+     B      ---- |     ---- |   ----   | ----     | ----      | ---------
+  -}
+  | getmax a < getmin b = [a]
+  | getmin a > getmax b = [a]
+  | getmin b <= getmin a && getmax a <= getmax b = [a]
+  | getmin a < getmin b && getmin b <= getmax a && getmax a <= getmax b =
+    [ setmax a (getmin b - 1)
+    , setmin a (getmin b)]
+  | getmax a > getmax b && getmin b <= getmin a && getmin a <= getmax b =
+    [ setmin a (getmax b + 1)
+    , setmax a (getmax b)]
+  | getmin a < getmin b && getmax b < getmax a =    -- feels safer to spell it out rather than "otherwise"
+    [ setmax a (getmin b - 1)
+    , setmin a (getmax b + 1)
+    , setmax (setmin a (getmin b)) (getmax b)]
+
+xslice :: Cuboid -> Cuboid -> [Cuboid]
+xslice a b = dslice (xmin, xmax, \a x -> a{xmin=x}, \a x -> a{xmax=x}) a b
+
+yslice :: Cuboid -> Cuboid -> [Cuboid]
+yslice a b = dslice (ymin, ymax, \a y -> a{ymin=y}, \a y -> a{ymax=y}) a b
+
+zslice :: Cuboid -> Cuboid -> [Cuboid]
+zslice a b = dslice (zmin, zmax, \a z -> a{zmin=z}, \a z -> a{zmax=z}) a b
+
+-- is A completely inside B?
+inside :: Cuboid -> Cuboid -> Bool
+inside a b =
+  xmin b <= xmin a && xmax a <= xmax b &&
+  ymin b <= ymin a && ymax a <= ymax b &&
+  zmin b <= zmin a && zmax a <= zmax b
+
+slice :: Cuboid -> Cuboid -> [Cuboid]
+slice a b
+  | a `overlaps` b = [a]
+                   & concatMap (`xslice` b)
+                   & concatMap (`yslice` b) 
+                   & concatMap (`zslice` b)
+  | otherwise = [a]
+
+-- add the new cuboid to the set of cuboids we already have
+-- we do this by splitting each current cuboid into its overlaps with the new one,
+-- taking the union, throwing away anything contained in the new on, then finally adding the new one.
+updateOn :: [Cuboid] -> Cuboid -> [Cuboid]
+updateOn cs new = new:updateOff cs new
+
+-- remove the new cuboid from an existing set
+-- we do this by splitting each current cuboid into its overlaps with the new one,
+-- and keeping only those not within the new one
+updateOff :: [Cuboid] -> Cuboid -> [Cuboid]
+updateOff cs remove =
+  concatMap (\c ->
+                slice c remove
+              & filter (\c' -> not (c' `inside` remove))) cs
+
+-- perform an update
+update :: [Cuboid] -> (Bool, Cuboid) -> [Cuboid]
+update cs (True, c) = updateOn cs c
+update cs (False, c) = updateOff cs c
+
+volume :: Cuboid -> Integer
+volume c = (xmax c - xmin c + 1) * (ymax c - ymin c + 1) * (zmax c - zmin c + 1)
+
+process :: [(Bool, Cuboid)] -> [Cuboid]
+process as = foldl (\cs n ->
+                      {- trace ("processing " ++ (show $ length cs) ++ " cuboids with " ++ (show n)) $ -}
+                      update cs n) [] as
+
+
 
 type Point = (Integer, Integer, Integer)
 
 day22 ls =
   let
     as = parse ls
-    segments = foldl part0 Set.empty as
+    final = process as
+    small = cuboid (-50) (50) (-50) (50) (-50) (50)
+    within = final
+           & concatMap (\c -> c `slice` small & filter (`inside` small))
+    vols = map volume within
   in
-    Set.size segments
-
-part0 :: Set.Set Point -> Action -> Set.Set Point
-part0 ps a =
-  let
-    mentioned = Set.fromList $ do
-      guard $ x0 a <= 50
-      let xl = max (-50) (x0 a) :: Integer
-      guard $ x1 a >= -50
-      let xh = min 50 (x1 a)
-      guard $ y0 a <= 50
-      let yl = max (-50) (y0 a)
-      guard $ y1 a >= -50
-      let yh = min 50 (y1 a)
-      guard $ z0 a <= 50
-      let zl = max (-50) (z0 a)
-      guard $ z1 a >= -50
-      let zh = min 50 (z1 a)
-      x <- [xl..xh]
-      y <- [yl..yh]
-      z <- [zl..zh]
-      return (x,y,z)
-  in
-    if on a then
-      ps `Set.union` mentioned
-    else
-      ps `Set.difference` mentioned
+    sum vols
 
 {-
 --- Part Two ---
@@ -279,112 +343,11 @@ After running the above reboot steps, 2758514936282235 cubes are on. (Just for f
 Starting again with all cubes off, execute all reboot steps. Afterward, considering all cubes, how many cubes are on?
 -}
 
-data Cuboid = Cuboid { xmin :: Integer
-                     , xmax :: Integer
-                     , ymin :: Integer
-                     , ymax :: Integer
-                     , zmin :: Integer
-                     , zmax :: Integer
-                     }
-  deriving (Show, Eq, Ord)
 
-cuboid x0 x1 y0 y1 z0 z1 = Cuboid { xmin=x0, xmax=x1, ymin=y0, ymax=y1, zmin=z0, zmax=z1 }
-
-parse' :: [String] -> [(Bool, Cuboid)]
-parse' ls = parse ls
-          & map (\a -> ((on a), Cuboid { xmin=x0 a, xmax=x1 a
-                                      , ymin=y0 a, ymax=y1 a
-                                      , zmin=z0 a, zmax=z1 a }))
-
-overlaps :: Cuboid -> Cuboid -> Bool
-overlaps c0 c1 =
-  -- we don't overlap if there's a separation along some axis
-  let
-    xsep = xmin c0 > xmax c1 || xmax c0 < xmin c1
-    ysep = ymin c0 > ymax c1 || ymax c0 < ymin c1
-    zsep = zmin c0 > zmax c1 || zmax c0 < zmin c1
-  in not (xsep || ysep || zsep)
-
--- given cuboids A and B, return a set whose union equals A, split along any overlaps with B
--- we'll use this by considering a pair of cuboids and splitting each in turn, along each axis
-dslice :: (Cuboid -> Integer, Cuboid -> Integer, Cuboid -> Integer -> Cuboid, Cuboid -> Integer -> Cuboid)  -- lenses
-       -> Cuboid -> Cuboid -> [Cuboid]
-dslice (getmin, getmax, setmin, setmax) a b
-  {- split A over the 'd' axis. Possibilities:
-     A  ----     | ------   | -------- |   ------ |     ----- |   -----
-     B      ---- |     ---- |   ----   | ----     | ----      | ---------
-  -}
-  | getmax a < getmin b = [a]
-  | getmin a > getmax b = [a]
-  | getmin b <= getmin a && getmax a <= getmax b = [a]
-  | getmin a < getmin b && getmin b <= getmax a && getmax a <= getmax b =
-    [ setmax a (getmin b - 1)
-    , setmin a (getmin b)]
-  | getmax a > getmax b && getmin b <= getmin a && getmin a <= getmax b =
-    [ setmin a (getmax b + 1)
-    , setmax a (getmax b)]
-  | getmin a < getmin b && getmax b < getmax a =    -- feels safer to spell it out rather than "otherwise"
-    [ setmax a (getmin b - 1)
-    , setmin a (getmax b + 1)
-    , setmax (setmin a (getmin b)) (getmax b)]
-
-xslice :: Cuboid -> Cuboid -> [Cuboid]
-xslice a b = dslice (xmin, xmax, \a x -> a{xmin=x}, \a x -> a{xmax=x}) a b
-
-yslice :: Cuboid -> Cuboid -> [Cuboid]
-yslice a b = dslice (ymin, ymax, \a y -> a{ymin=y}, \a y -> a{ymax=y}) a b
-
-zslice :: Cuboid -> Cuboid -> [Cuboid]
-zslice a b = dslice (zmin, zmax, \a z -> a{zmin=z}, \a z -> a{zmax=z}) a b
-
--- is A completely inside B?
-inside :: Cuboid -> Cuboid -> Bool
-inside a b =
-  xmin b <= xmin a && xmax a <= xmax b &&
-  ymin b <= ymin a && ymax a <= ymax b &&
-  zmin b <= zmin a && zmax a <= zmax b
-
-slice :: Cuboid -> Cuboid -> [Cuboid]
-slice a b = [a]
-          & concatMap (`xslice` b)
-          & concatMap (`yslice` b) 
-          & concatMap (`zslice` b)
-
--- add the new cuboid to the set of cuboids we already have
--- we do this by splitting each current cuboid into its overlaps with the new one,
--- taking the union, throwing away anything contained in the new on, then finally adding the new one.
-updateOn :: [Cuboid] -> Cuboid -> [Cuboid]
-updateOn cs new = new:updateOff cs new
-
--- remove the new cuboid from an existing set
--- we do this by splitting each current cuboid into its overlaps with the new one,
--- and keeping only those not within the new one
-updateOff :: [Cuboid] -> Cuboid -> [Cuboid]
-updateOff cs remove =
-  concat $ do
-    c <- cs
-    return $
-     if overlaps c remove then
-       slice c remove & filter (\c' -> not (c' `inside` remove))
-     else
-       [c]
-
--- perform an update
-update :: [Cuboid] -> (Bool, Cuboid) -> [Cuboid]
-update cs (True, c) = updateOn cs c
-update cs (False, c) = updateOff cs c
-
-volume :: Cuboid -> Integer
-volume c = (xmax c - xmin c + 1) * (ymax c - ymin c + 1) * (zmax c - zmin c + 1)
-
-process :: [(Bool, Cuboid)] -> [Cuboid]
-process as = foldl (\cs n ->
-                      {- trace ("processing " ++ (show $ length cs) ++ " cuboids with " ++ (show n)) $ -}
-                      update cs n) [] as
 
 day22b ls =
   let
-    cs = parse' ls
+    cs = parse ls
     final = process cs
     vols = map volume final
   in

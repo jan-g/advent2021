@@ -122,17 +122,12 @@ main =
               \off x=-70369..-16548,y=22648..78696,z=-1892..86821\n\
               \on x=-53470..21291,y=-120233..-33476,z=-44150..38147\n\
               \off x=-93533..-4276,y=-16170..68771,z=-104985..-24507" & lines
-        ps' = Day22.parse' ex2
+        ps = Day22.parse ex2
       it "parses correctly" $ do
-        head ps' `shouldBe` (True, Day22.cuboid (-5) 47 (-31) 22 (-19) 33)
-        last ps' `shouldBe` (False, Day22.cuboid (-93533) (-4276) (-16170) 68771 (-104985) (-24507))
-        length ps' `shouldBe` 60
+        head ps `shouldBe` (True, Day22.cuboid (-5) 47 (-31) 22 (-19) 33)
+        last ps `shouldBe` (False, Day22.cuboid (-93533) (-4276) (-16170) 68771 (-104985) (-24507))
+        length ps `shouldBe` 60
       it "works out part 2" $ do
         Day22.day22b ex2 `shouldBe` 2758514936282235
       it "does the check for part 2, the central region" $ do
-        let
-          region = Day22.cuboid (-50) (50) (-50) (50) (-50) (50) 
-          cuboids = Day22.process ps'
-          small = cuboids & concatMap (\c -> Day22.slice c region & filter (`Day22.inside` region))
-          vols = map Day22.volume small
-        sum vols `shouldBe` 474140 
+        Day22.day22 ex2 `shouldBe` 474140 
