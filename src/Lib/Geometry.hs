@@ -3,7 +3,7 @@ module Lib.Geometry
 , YSliceable, ymin, ymax, setYmin, setYmax
 , ZSliceable, zmin, zmax, setZmin, setZmax
 , Overlappable, Sliceable
-, overlaps, inside
+, overlaps, inside, overlap
 , slice
 , Cuboid, cuboid
 , Rectangle, rectangle
@@ -107,6 +107,8 @@ class Overlappable s where
   overlaps :: s -> s -> Bool
   -- is A completely inside B?
   inside :: s -> s -> Bool
+  -- produce the overlap, if there is one
+  overlap :: s -> s -> Maybe s
 
 class Sliceable s where
   slice :: s -> s -> [s]
@@ -124,6 +126,12 @@ instance Overlappable Cuboid where
     xmin b <= xmin a && xmax a <= xmax b &&
     ymin b <= ymin a && ymax a <= ymax b &&
     zmin b <= zmin a && zmax a <= zmax b
+  -- produce the overlap
+  overlap a b
+    | overlaps a b = Just $ cuboid (xmin a `max` xmin b) (xmax a `min` xmax b)
+                                   (ymin a `max` ymin b) (ymax a `min` ymax b)
+                                   (zmin a `max` zmin b) (zmax a `min` zmax b)
+    | otherwise = Nothing
 
 instance Sliceable Cuboid where    
   slice a b
@@ -166,6 +174,11 @@ instance Overlappable Rectangle where
   inside a b =
     xmin b <= xmin a && xmax a <= xmax b &&
     ymin b <= ymin a && ymax a <= ymax b
+  -- produce the overlap
+  overlap a b
+    | overlaps a b = Just $ rectangle (xmin a `max` xmin b) (xmax a `min` xmax b)
+                                      (ymin a `max` ymin b) (ymax a `min` ymax b)
+    | otherwise = Nothing
 
 instance Sliceable Rectangle where    
   slice a b
@@ -197,6 +210,10 @@ instance Overlappable Line where
   -- is A completely inside B?
   inside a b =
     xmin b <= xmin a && xmax a <= xmax b
+  -- produce the overlap
+  overlap a b
+    | overlaps a b = Just $ line (xmin a `max` xmin b) (xmax a `min` xmax b)
+    | otherwise = Nothing
 
 instance Sliceable Line where    
   slice a b

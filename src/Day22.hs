@@ -283,3 +283,26 @@ day22b ls =
     vols = map volume final
   in
     sum vols
+
+
+day22b' ls =
+  let
+    cs = parse ls
+    final = foldl update [] cs
+  in
+    sum [sign * volume c | (sign, c) <- final]
+  where
+  update :: [(Integer, Cuboid)] -> (Bool, Cuboid) -> [(Integer, Cuboid)]
+  update thusFar (isOn, c) =
+    -- trace ("overlapping with " ++ (show $ length thusFar) ++ " cuboids, and " ++ show c) $
+    let
+      sign = if isOn then 1 else -1
+      overlaps = do
+        (sign', c') <- thusFar
+        let o = overlap c' c
+        guard $ isJust o
+        return (-sign', fromJust o)
+      last = [(1, c) | isOn]
+    in
+      thusFar ++ overlaps ++ last
+      
