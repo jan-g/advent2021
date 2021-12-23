@@ -326,7 +326,7 @@ day22b'' ls =
   (xs, ys, zs) = allCoords (map snd cs)
   (xb, yb, zb) = (bracket xs, bracket ys, bracket zs)
   bracket ds =
-    trace ("size of coordinate set: " ++ show (Set.size ds)) $
+--    trace ("size of coordinate set: " ++ show (Set.size ds)) $
     let
       range = Set.toAscList ds
       top = Set.findMax ds + 1
@@ -342,7 +342,7 @@ day22b'' ls =
     filter (\(l,h) -> l <= dmax && dmin < h) brackets
   update :: Set.Set (Range, Range, Range) -> (Bool, Cuboid) -> Set.Set (Range, Range, Range)
   update thusFar (isOn, c) =
-    trace ("overlapping with " ++ (show $ Set.size thusFar) ++ " regions, and " ++ show c) $
+    -- trace ("overlapping with " ++ (show $ Set.size thusFar) ++ " regions, and " ++ show c) $
     let
       cells = Set.fromList $ do
         x <- regions xb (xmin c) (xmax c)

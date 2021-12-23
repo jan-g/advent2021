@@ -137,3 +137,21 @@ main =
 
       it "computes 22b using cells" $ do
         Day22.day22b'' ex2 `shouldBe` 2758514936282235
+
+    describe "day 23" $ do
+      let
+        ex = "#############\n\
+             \#...........#\n\
+             \###B#C#B#D###\n\
+             \  #A#D#C#A#\n\
+             \  #########" & lines
+      it "solves the example" $ do
+        Day23.day23 ex `shouldBe` Just (12521, Day23.target)
+      it "sets up part b correctly" $ do
+        Map.size Day23.target' `shouldBe` 16
+        Map.size (snd $ Day23.startState' ex) `shouldBe` 16
+        length Day23.moves' `shouldBe` 4 * 4 * 7 * 2
+      it "solves the longer example for part b" $ do
+--        forM_ Day23.moves' $ \m -> do
+--          print m
+        Day23.day23b ex `shouldBe` Just (44169, Day23.target')

@@ -40,6 +40,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Function ((&))
 import qualified Data.Heap as H
+import Debug.Trace (trace)
 
 loadLines fn = do
   contents <- readFile fn
@@ -276,6 +277,7 @@ search nextStates satisfying summariseState (startCost, startState) =
           q'' = Set.foldr H.insert q' nexts
           seen' = Set.insert summary seenStates
       in
+      -- trace ("checking state with cost " ++ show cost) $
       if satisfying (cost, state)
       then Right (cost, state, seenStates)
       else if Set.member summary seenStates
