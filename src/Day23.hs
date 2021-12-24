@@ -564,6 +564,7 @@ day23b ls =
 --  trace ("start state: " ++ show startState) $
 --  trace ("target state: " ++ show target') $
   bfs nextStates satisfying summariseState (startState' ls)
+  -- aStar nextStates satisfying cost heuristic' id (startState' ls)
   where
   nextStates :: (Int, State') -> Set.Set (Int, State')
   nextStates (c, s) = allMoves' s
@@ -573,6 +574,7 @@ day23b ls =
   satisfying (_, s) = finished' s
   summariseState :: State' -> State'
   summariseState = id
+  cost = fst
   
 startState' :: [String] -> (Int, State')
 startState' ls = (0, parse)
@@ -581,3 +583,20 @@ startState' ls = (0, parse)
   parse = loadMap ls'
         & Map.filter isAlpha
 
+heuristic' :: (Int, State') -> Int
+heuristic' (_, s) = (cost 3 'A') + 10 * (cost 5 'B') + 100 * (cost 7 'C') + 1000 * (cost 9 'D')
+  where
+  cost = cost1
+  cost0 x c =
+    let cs = [s Map.!? (x,y) == Just c | y <- [2..5]]
+    in case cs of
+      [_, _, _, False] -> 10
+      [_, _, False, True] -> 6
+      [_, False, True, True] -> 3
+      [False, True, True, True] -> 1
+      [True, True, True, True] -> 0
+  cost1 x c = sum $ do
+    ((p, _), a) <- Map.toList s
+    guard $ a == c
+    guard $ p /= x
+    return $ fromInteger $ abs (x - p)

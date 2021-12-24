@@ -312,7 +312,7 @@ floodFill nextStates startState =
 -- a* search. Provide a cost function and a heuristic. If the heuristic function is admissible,
 -- meaning that it never overestimates the actual cost to get to the goal, A* is guaranteed to
 -- return a least-cost path from start to goal.
-aStar :: (Ord s, Ord c, Num c, Ord t)
+aStar :: (Ord s, Ord c, Num c, Show c, Ord t)
       => (s -> Set.Set s)
       -> (s -> Bool)
       -> (s -> c)
@@ -324,7 +324,7 @@ aStar nextStates finished cost heuristic summariseState startState =
   aStar' nextStates finished cost heuristic summariseState
          Set.empty (H.singleton (cost startState + heuristic startState, startState))
 
-aStar' :: (Ord s, Ord c, Num c, Ord t)
+aStar' :: (Ord s, Ord c, Num c, Show c, Ord t)
       => (s -> Set.Set s)
       -> (s -> Bool)
       -> (s -> c)
@@ -339,7 +339,8 @@ aStar' nextStates finished cost heuristic summariseState visited queue
     let Just ((f, state), queue') = H.view queue
         summary = summariseState state
         queue'' = foldl (\q s' -> H.insert (cost s' + heuristic s', s') q) queue' (nextStates state)
-    in  if finished state then Just state
+    in  trace ("cost is: " ++ show f) $
+        if finished state then Just state
         else if Set.member summary visited
         then aStar' nextStates finished cost heuristic summariseState visited queue'
         else aStar' nextStates finished cost heuristic summariseState (Set.insert summary visited) queue''
